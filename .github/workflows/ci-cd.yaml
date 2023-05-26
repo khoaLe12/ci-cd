@@ -1,0 +1,42 @@
+name: Continuous integration and deployment
+
+on:
+    push:
+        branches:
+            - main
+
+env:
+  DOTNET_VERSION: "6.0.x"
+  AZURE_WEBAPP_NAME: khoa-first-webapp
+
+jobs:
+    build:
+        runs-on: ubuntu-latest
+        steps:
+            - name: Check out code
+              uses: actions/checkout@v3
+
+            - name: Setup .NET 6
+              uses: actions/setup-dotnet@v3
+              with:
+                dotnet-version: ${{env.DOTNET_VERSION}}
+
+            - name: Start SQL Server
+              run: |
+                docker run -d -e "ACCEPT_EULA=Y" -e "MSSQL_SA_PASSWORD=pop~153426" -e "MSSQL_PID=Express" -p 1433:1433 -d mcr.microsoft.com/mssql/server:2019-latest
+
+            - name: Sleep for 5 seconds
+              uses: jakejarvis/wait-action@master
+              with:
+                time: '5s'
+
+            - name: Restore dependencies
+              run: dotnet restore
+            
+            - name: Build app
+              run: dotnet build -c Release --no-restore
+
+            - name: Run automated tests
+              env:
+                ConnectionStrings__DefaultConnection: Server=(local);database=Northwind_Test;User=sa;Password=pop~153426;TrustServerCertificate=True
+              run: dotnet test -c Release --no-build
