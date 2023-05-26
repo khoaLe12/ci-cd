@@ -7,7 +7,7 @@ on:
 
 env:
   DOTNET_VERSION: "6.0.x"
-  AZURE_WEBAPP_NAME: khoa-first-webapp
+  AZURE_WEBAPP_NAME: First-WebService
 
 jobs:
     build:
@@ -40,3 +40,13 @@ jobs:
               env:
                 ConnectionStrings__DefaultConnection: Server=(local);database=Northwind_Test;User=sa;Password=pop~153426;TrustServerCertificate=True
               run: dotnet test -c Release --no-build
+
+            - name: Publish app
+              run: dotnet publish -c Release -o ./out
+              
+            - name: Deploy to Azure Web Apps
+              uses: azure/webapps-deploy@v2
+              with:
+                app-name: ${{env.AZURE_WEBAPP_NAME}}
+                publish-profile: ${{ secrets.AZURE_WEBAPP_PUBLISH_SECRET }}
+                package: ./out
